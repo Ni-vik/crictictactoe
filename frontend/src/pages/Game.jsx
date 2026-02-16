@@ -38,7 +38,7 @@ const Game = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [playerGuess]);
 
-    const socketUrl = `ws://localhost:8000/ws/game/${gameId}?token=${token}`;
+    const socketUrl = `wss://crictictactoe.onrender.com/ws/game/${gameId}?token=${token}`;
     
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         onOpen: () => console.log('Connected to Game WS'),
