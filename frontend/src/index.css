@@ -1,0 +1,136 @@
+/* ===== Reset & Base ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* =========================================
+     CRICKET THEME PALETTE
+     ========================================= */
+  
+  /* Pitch & Stadium Backgrounds */
+  --bg-primary: #022c22; /* Deepest Emerald (Night Sky/Pitch) */
+  --bg-secondary: #064e3b; /* Pitch Green */
+  --bg-card: rgba(6, 78, 59, 0.5); /* Glassy Green */
+  --bg-card-hover: rgba(6, 95, 70, 0.7);
+  --bg-input: rgba(2, 44, 34, 0.6);
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(52, 211, 153, 0.2); /* Emerald Tint Check */
+  --glass-border-hover: rgba(52, 211, 153, 0.4);
+
+  /* Text */
+  --text-primary: #f0fdf4; /* Pale Green/White */
+  --text-secondary: #86efac; /* Light Green */
+  --text-muted: #4ade80; /* Muted Green */
+  --text-dim: #166534; /* Dark Green Text */
+
+  /* Jersey Blue (Primary Action / Player X) */
+  --blue-700: #1e3a8a;
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --blue-400: #60a5fa;
+  --blue-300: #93c5fd;
+  --blue-glow: rgba(59, 130, 246, 0.2);
+  
+  /* Cricket Ball Red (Danger / Player O / Action) */
+  --red-700: #b91c1c;
+  --red-600: #dc2626;
+  --red-500: #ef4444;
+  --red-400: #f87171;
+  --red-glow: rgba(220, 38, 38, 0.25);
+
+  /* Pitch Emerald (Success / Theme Base) */
+  --emerald-700: #047857;
+  --emerald-600: #059669;
+  --emerald-500: #10b981;
+  --emerald-400: #34d399;
+  --emerald-glow: rgba(16, 185, 129, 0.2);
+
+  /* Trophy Gold (Winner) */
+  --gold-500: #f59e0b;
+  --gold-400: #fbbf24;
+  --gold-glow: rgba(245, 158, 11, 0.3);
+
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-glow-blue: 0 0 30px rgba(37, 99, 235, 0.2);
+  --shadow-glow-red: 0 0 30px rgba(220, 38, 38, 0.25);
+  --shadow-glow-gold: 0 0 40px rgba(245, 158, 11, 0.3);
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms var(--ease-out);
+  --transition-normal: 250ms var(--ease-out);
+  --transition-slow: 400ms var(--ease-out);
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(5, 150, 105, 0.15), transparent 60%), /* Floodlight Top */
+    radial-gradient(circle at 10% 90%, rgba(37, 99, 235, 0.1), transparent 50%), /* Blue Team Light */
+    radial-gradient(circle at 90% 90%, rgba(220, 38, 38, 0.1), transparent 50%); /* Red Team Light */
+}
+
+/* Texture overlay for "Grass" feel */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+a, button, input {
+  color: inherit;
+  text-decoration: none;
+  font-family: inherit;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+button { cursor: pointer; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

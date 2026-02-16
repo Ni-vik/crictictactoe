@@ -47,3 +47,62 @@ class GameEngine:
         new_board = list(board)
         new_board[position] = player_symbol
         return new_board
+
+    @staticmethod
+    def generate_grid_headers(ipl_teams: List[str], national_teams: List[str]) -> dict:
+        """
+        Randomly assigns 3 teams for rows and 3 teams for columns.
+        Constraints:
+        1. Max 2 nations in a game.
+        2. Nations must be on 1 axis only (either horizontal or vertical).
+        """
+        import random
+        
+        # Decide which axis gets the nations
+        nation_axis = random.choice(['rows', 'cols'])
+        other_axis = 'cols' if nation_axis == 'rows' else 'rows'
+        
+        # Shuffle inputs to ensure randomness
+        random.shuffle(ipl_teams)
+        random.shuffle(national_teams)
+        
+        # Select up to 2 nations
+        selected_nations = national_teams[:2]
+        
+        # We need 3 headers for each axis.
+        # The nation axis will have the nations + some IPL teams.
+        # The other axis will have only IPL teams.
+        
+        nation_axis_headers = selected_nations + ipl_teams[:(3 - len(selected_nations))]
+        random.shuffle(nation_axis_headers)
+        
+        other_axis_headers = ipl_teams[(3 - len(selected_nations)):(6 - len(selected_nations))]
+        random.shuffle(other_axis_headers)
+        
+        return {
+            nation_axis: nation_axis_headers,
+            other_axis: other_axis_headers
+        }
+
+    @staticmethod
+    def validate_guess(player_data: dict, row_criteria: str, col_criteria: str) -> bool:
+        """
+        Validates if the guessed player matches the criteria for the chosen cell.
+        The player must match EITHER the row criteria (IPL Team/Country) 
+        OR the column criteria. 
+        
+        Wait, standard Tic Tac Toe with Cricket players usually means the player 
+        must contain attributes of BOTH the row and column. 
+        
+        Example: Row=CSK, Col=India. Player must be MS Dhoni (played for CSK AND India).
+        """
+        player_teams = player_data.get("IPL Teams", [])
+        player_country = player_data.get("Country")
+        
+        # Normalize criteria for comparison
+        # (Assuming data in DB is consistent, but good to be safe)
+        
+        matches_row = (row_criteria in player_teams) or (row_criteria == player_country)
+        matches_col = (col_criteria in player_teams) or (col_criteria == player_country)
+        
+        return matches_row and matches_col

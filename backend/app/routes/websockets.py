@@ -3,9 +3,10 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Qu
 from typing import Dict, List, Optional
 from bson import ObjectId
 from datetime import datetime
+import random
 from jose import JWTError
 
-from database.db import games_collection, users_collection
+from database.db import games_collection, users_collection, players_collection
 from app.services.game_engine import GameEngine
 from app.utils.jwt import decode_access_token
 
@@ -137,13 +138,43 @@ async def game_websocket(
     # but the logic checks if we just reached 2 connections.
     # Safe to assume if we are 'waiting' and now have 2, we start.
     if game["status"] == "waiting" and len(manager.active_connections.get(game_id, {})) == 2:
+        # Fetch available teams for grid generation
+        pipeline_ipl = [
+            {"$unwind": "$IPL Teams"},
+            {"$group": {"_id": "$IPL Teams"}},
+            {"$sample": {"size": 6}}
+        ]
+        pipeline_country = [
+            {"$group": {"_id": "$Country"}},
+            {"$sample": {"size": 2}}
+        ]
+        
+        ipl_teams_cursor = players_collection.aggregate(pipeline_ipl)
+        national_teams_cursor = players_collection.aggregate(pipeline_country)
+        
+        ipl_teams = [doc["_id"] async for doc in ipl_teams_cursor]
+        national_teams = [doc["_id"] async for doc in national_teams_cursor]
+        
+        # Fallback if not enough data (mostly for testing/robustness)
+        if len(ipl_teams) < 4:
+            # Add placeholders if DB is empty
+            ipl_teams += [f"IPL_Team_{i}" for i in range(4 - len(ipl_teams))]
+        if len(national_teams) < 2:
+            national_teams += [f"Country_{i}" for i in range(2 - len(national_teams))]
+            
+        grid_headers = GameEngine.generate_grid_headers(ipl_teams, national_teams)
+        
         await games_collection.update_one(
             {"game_id": game_id},
-            {"$set": {"status": "in_progress"}}
+            {"$set": {
+                "status": "in_progress",
+                "grid_headers": grid_headers
+            }}
         )
         await manager.broadcast_to_game({
             "type": "game_start",
             "message": "Both players connected. Game started!",
+            "grid_headers": grid_headers,
             "timestamp": datetime.utcnow().isoformat()
         }, game_id)
     
@@ -157,20 +188,80 @@ async def game_websocket(
                 # Fetch fresh game state
                 game = await games_collection.find_one({"game_id": game_id})
                 
-                # Validate Move using GameEngine
-                is_valid, error_msg = GameEngine.validate_move(
+                # Check if game has grid headers (legacy games might not)
+                grid_headers = game.get("grid_headers")
+                guessed_player_name = data.get("player_guess")
+                
+                if not grid_headers:
+                     await manager.send_personal_message({
+                        "type": "error",
+                        "message": "Game grid not initialized."
+                    }, websocket)
+                     continue
+
+                if not guessed_player_name:
+                     await manager.send_personal_message({
+                        "type": "error",
+                        "message": "You must guess a player name."
+                    }, websocket)
+                     continue
+                
+                # Look up player in DB
+                # Case-insensitive regex search for exact match preferred or just case-insensitive
+                # "player_name" field in DB
+                player_doc = await players_collection.find_one(
+                    {"player_name": {"$regex": f"^{guessed_player_name}$", "$options": "i"}}
+                )
+                
+                if not player_doc:
+                     await manager.send_personal_message({
+                        "type": "error",
+                        "message": f"Player '{guessed_player_name}' not found in database."
+                    }, websocket)
+                     continue
+                     
+                # Determine Row/Col criteria based on position
+                # 0 1 2 -> Row 0
+                # 3 4 5 -> Row 1
+                # 6 7 8 -> Row 2
+                # Cols: pos % 3
+                row_idx = position // 3
+                col_idx = position % 3
+                
+                row_criteria = grid_headers["rows"][row_idx]
+                col_criteria = grid_headers["cols"][col_idx]
+                
+                # Validate Move using GameEngine (Logic + Data Check)
+                is_valid_logic, error_msg_logic = GameEngine.validate_move(
                     board=game["board"],
                     position=position,
                     current_turn_player_id=game["current_turn"],
                     requesting_player_id=user_id
                 )
                 
-                if not is_valid:
+                if not is_valid_logic:
                     await manager.send_personal_message({
                         "type": "error",
-                        "message": error_msg
+                        "message": error_msg_logic
                     }, websocket)
                     continue
+
+                # Validate Guess (Content Check)
+                is_valid_guess = GameEngine.validate_guess(player_doc, row_criteria, col_criteria)
+                
+                if not is_valid_guess:
+                     await manager.send_personal_message({
+                        "type": "error",
+                        "message": f"Player '{player_doc['player_name']}' does not match {row_criteria} and {col_criteria}."
+                    }, websocket)
+                     continue
+                
+                if not is_valid_guess:
+                     await manager.send_personal_message({
+                        "type": "error",
+                        "message": f"Player '{player_doc['player_name']}' does not match {row_criteria} and {col_criteria}."
+                    }, websocket)
+                     continue
                 
                 # Determine symbol
                 symbol = "X" if user_id == game["player1_id"] else "O"

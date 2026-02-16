@@ -56,7 +56,7 @@ async def get_invite(invite_id: str):
             detail="Invite has expired"
         )
     
-    if invite["status"] != "pending":
+    if invite["status"] not in ["pending", "accepted"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invite is {invite['status']}"
@@ -66,7 +66,9 @@ async def get_invite(invite_id: str):
         "invite_id": invite["invite_id"],
         "created_by_username": invite["created_by_username"],
         "created_at": invite["created_at"],
-        "expires_at": invite["expires_at"]
+        "expires_at": invite["expires_at"],
+        "status": invite["status"],
+        "game_id": invite.get("game_id")
     }
 
 @router.post("/{invite_id}/accept", status_code=status.HTTP_200_OK)
