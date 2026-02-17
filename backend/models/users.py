@@ -17,8 +17,15 @@ class UserInDB(BaseModel):
 class UserSignUp(BaseModel):
     """Model for user registration"""
     username: str = Field(..., min_length=3, max_length=20)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     password: str = Field(..., min_length=8,max_length=20)
+
+    @field_validator('email')
+    def email_lowercase(cls, v):
+        """Store email as lowercase if provided"""
+        if v:
+            return v.lower()
+        return v
     
     @field_validator('username')
     def username_alphanumeric(cls, v):

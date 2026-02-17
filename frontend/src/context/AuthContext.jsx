@@ -38,11 +38,21 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password) => {
     try {
-        await api.post('/auth/signup', { username, email, password });
+        const payload = { username, password };
+        if (email && email.trim() !== "") {
+            payload.email = email;
+        }
+        
+        await api.post('/auth/signup', payload);
         return true;
     } catch (error) {
         console.error("Signup failed", error);
-        throw error;
+        const errorMessage = error.response?.data?.detail;
+        if (Array.isArray(errorMessage)) {
+            // Handle Pydantic validation errors (often a list)
+            throw new Error(errorMessage.map(e => e.msg).join(', '));
+        }
+        throw new Error(errorMessage || "Signup failed. Please check your inputs.");
     }
   };
 

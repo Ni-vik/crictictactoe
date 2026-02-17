@@ -11,25 +11,28 @@ router = APIRouter(prefix="/auth" , tags = ["Auth"])
 @router.post("/signup",status_code = status.HTTP_201_CREATED)
 async def signup(user : UserSignUp):
 
+    # Case-insensitive username check
     existing_username = await users_collection.find_one({
-        "username" : user.username
+        "username": {"$regex": f"^{user.username}$", "$options": "i"}
     })
 
     if existing_username:
         raise HTTPException(
             status_code=400,
-            detail = "Username already exists"
+            detail="Username already exists"
         )
     
-    existing_email = await users_collection.find_one(
-        {"email" : user.email}
-    )
+    # Only check email if provided
+    if user.email:
+        existing_email = await users_collection.find_one({
+            "email": {"$regex": f"^{user.email}$", "$options": "i"}
+        })
 
-    if existing_email:
-        raise HTTPException(
-            status_code=400,
-            detail= "Email already registered"
-        )
+        if existing_email:
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered"
+            )
     
     user_doc = {
         "user_id": str(uuid4()),

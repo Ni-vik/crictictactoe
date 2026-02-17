@@ -16,7 +16,7 @@ const Signup = () => {
       await signup(username, email, password);
       navigate('/login');
     } catch (err) {
-      setError('Failed to create account. Username might be taken.');
+      setError(err.message || 'Failed to create account. Please check your inputs.');
     }
   };
 
